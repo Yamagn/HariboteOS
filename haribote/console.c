@@ -218,6 +218,10 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, int memtotal)
 		cmd_ncst(cons, cmdline, memtotal);
 	} else if (strncmp(cmdline, "langmode ", 9) == 0) {
 		cmd_langmode(cons, cmdline);
+	} else if (strncmp(cmdline, "rm ", 3) == 0) {
+		cmd_rm(cons, cmdline);
+	} else if (strcmp(cmdline, "mv ", 3) == 0) {
+		cmd_mv();
 	} else if (cmdline[0] != 0) {
 		if (cmd_app(cons, fat, cmdline) == 0) {
 			/* コマンドではなく、アプリでもなく、さらに空行でもない */
@@ -340,6 +344,51 @@ void cmd_langmode(struct CONSOLE *cons, char *cmdline)
 	}
 	cons_newline(cons);
 	return;
+}
+
+void cmd_rm(struct CONSOLE *cons, char *cmdline)
+{
+	struct FILEINFO *finfo = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
+	int x, y;
+	char s[30];
+	for (y = 0; y < 11; y ++) {
+		s[y] = ' ';
+	}
+	y = 0;
+	for (x = 3;y < 11 && cmdline[x] != 0;x++) {
+		if (cmdline[x] == '.' && y <= 8) {
+			y = 8;
+		} else {
+			s[y] = cmdline[x];
+			if ('a' <= s[y] && s[y] <= 'z') {
+				s[y] -= 0x20;
+			}
+			y++;
+		}
+	}
+
+	for (x = 0; x < 224;) {
+		if (finfo[x].name[0] == 0x00) {
+			break;
+		}
+		if ((finfo[x].type & 0x18) == 0) {
+			for (y = 0; y < 11; y++) {
+				if (finfo[x].name[y] != s[y]) {
+					goto type_next_file;
+				}
+			}
+			break;
+		}
+type_next_file:
+		x++;
+	}
+	if (x < 224 && finfo[x].name[0] != 0x00) {
+		finfo[x].name[0] = 0xe5;
+		/*TODO: クラスタチェーンも削除しなければいけない */
+	} else {
+		cons_putstr0(cons, "file not found.");
+		cons_newline(cons);
+	}
 }
 
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
