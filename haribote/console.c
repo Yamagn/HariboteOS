@@ -416,6 +416,10 @@ void cmd_mv(struct CONSOLE *cons, char *cmdline)
 			finfo->name[y] = dest[i];
 			y++;
 		}
+	} else {
+		cons_putstr0(cons, "File not Found.");
+		cons_newline(cons);
+		return;
 	}
 }
 
