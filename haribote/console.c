@@ -346,12 +346,7 @@ void cmd_langmode(struct CONSOLE *cons, char *cmdline)
 
 void cmd_rm(struct CONSOLE *cons, char *cmdline)
 {
-    struct FILEINFO *finfo; 
-	int x, y;
-	for (y = 0; y < 11; y++) {
-		s[y] = '';
-	}
-	y = 0;
+	struct FILEINFO *finfo;
 	finfo = file_search(cmdline + 3, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
 	if (finfo != NULL && finfo[x].name[0] != 0x00) {
 		finfo[x].name[0] = 0xe5;
@@ -723,23 +718,4 @@ void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
 	}
 
 	return;
-}
-
-int findFile(struct FILEINFO *finfo, char *fileName) {
-	char s[30];
-	int x, y;
-	/* ファイルを探す */
-	for (x = 0; x < 224; x++) {
-		if (finfo[x].name[0] == 0x00) {
-			return -1;
-		}
-		if ((finfo[x].type & 0x18) == 0) {
-			for (y = 0; y < 11; y++) {
-				if (finfo[x].name[y] != s[y]) {
-				}
-			}
-			return x;/*ファイルが見つかった*/
-		}
-	}
-	return -1;
 }
