@@ -222,6 +222,8 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, int memtotal)
 		cmd_rm(cons, cmdline);
 	} else if (strncmp(cmdline, "mv ", 3) == 0) {
 		cmd_mv(cons, cmdline);
+	} else if (strncmp(cmdline, "mkdir ", 6) == 0) {
+		cmd_mkdir(cons, cmdline, fat);
 	} else if (cmdline[0] != 0) {
 		if (cmd_app(cons, fat, cmdline) == 0) {
 			/* コマンドではなく、アプリでもなく、さらに空行でもない */
@@ -403,7 +405,7 @@ void cmd_mv(struct CONSOLE *cons, char *cmdline)
 				return;
 			} 
 		}
-		for (i = 0; i < 11; i++) {
+		for (i = 0; i < 8; i++) {
 			finfo->name[i] = ' ';
 		}
 		for (i = 0; dest[i] != '.'; i++) {
@@ -415,6 +417,30 @@ void cmd_mv(struct CONSOLE *cons, char *cmdline)
 			y++;
 		}
 	}
+}
+
+void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
+	struct FILEINFO *finfo;
+	int i, y;
+	y = 0;
+	for (i = 0; i < 8; i++) {
+		finfo->name[i] = ' ';
+	}
+	for (i = 6; cmdline[i] != '\0'; i++) {
+		finfo->name[y] = cmdline[i];
+	}
+	finfo->type = 0x10;
+	finfo->size = 0;
+	finfo->clustno = allocClust(fat);
+	if (finfo->clustno = -1) {
+		cons_putstr0(cons, "Not Empty Fat");
+		cons_newline(cons);
+		return;
+	}
+	fat[finfo->clustno] = 0xfff;
+	
+
+	
 }
 
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
@@ -778,4 +804,14 @@ void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
 	}
 
 	return;
+}
+
+int allocClust(int *fat) {
+	int i;
+	for (i = 0; fat[i] != 0; i++) {
+		if (i >= 2880) {
+			return -1;
+		}
+	}
+	return i;
 }

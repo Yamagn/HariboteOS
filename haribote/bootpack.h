@@ -282,7 +282,8 @@ void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
 struct FILEINFO {
 	unsigned char name[8], ext[3], type;
 	char reserve[10];
-	unsigned short time, date, clustno;
+	unsigned short time, date
+	int clustno;
 	unsigned int size;
 };
 void file_readfat(int *fat, unsigned char *img);
