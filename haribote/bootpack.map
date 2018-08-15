@@ -1,5 +1,5 @@
-text size :  24565(0x05FF5)
-data size :  15360(0x03C00)
+text size :  24765(0x060BD)
+data size :  15405(0x03C2D)
 bss  size :      0(0x00000)
 
 0x00000000 : (.text)
@@ -119,35 +119,36 @@ bss  size :      0(0x00000)
 0x00003587 : _cons_putstr0
 0x000035B5 : _cons_putstr1
 0x000035E8 : _cons_runcmd
-0x000037A6 : _cmd_mem
-0x000037E7 : _cmd_cls
-0x00003840 : _cmd_dir
-0x000038D6 : _cmd_exit
-0x0000396E : _cmd_start
-0x000039F8 : _cmd_ncst
-0x00003A5C : _cmd_langmode
-0x00003A9A : _cmd_rm
-0x00003B79 : _cmd_app
-0x00003DBF : _hrb_api
-0x0000447D : _inthandler0c
-0x000044C6 : _inthandler0d
-0x0000450F : _hrb_api_linewin
-0x000045EB : _file_readfat
-0x000045EB : (.text)
-0x0000463D : _file_loadfile
-0x000046A3 : _file_search
-0x0000474E : _file_loadfile2
-0x000047CD : (.text)
-0x000047F2 : _tek_getsize
-0x00004848 : _tek_decomp
-0x00005B33 : (.text)
-0x00005B33 : _HariStartup
-0x00005B3C : _sprintf
-0x00005B3C : (.text)
-0x00005B50 : (.text)
-0x00005B8C : _strtoul0
-0x00005C5F : (.text)
-0x00005C87 : _vsprintf
+0x000037D3 : _cmd_mem
+0x00003814 : _cmd_cls
+0x0000386D : _cmd_dir
+0x00003903 : _cmd_exit
+0x0000399B : _cmd_start
+0x00003A25 : _cmd_ncst
+0x00003A89 : _cmd_langmode
+0x00003AC7 : _cmd_rm
+0x00003B11 : _cmd_mv
+0x00003C41 : _cmd_app
+0x00003E87 : _hrb_api
+0x00004545 : _inthandler0c
+0x0000458E : _inthandler0d
+0x000045D7 : _hrb_api_linewin
+0x000046B3 : _file_readfat
+0x000046B3 : (.text)
+0x00004705 : _file_loadfile
+0x0000476B : _file_search
+0x00004816 : _file_loadfile2
+0x00004895 : (.text)
+0x000048BA : _tek_getsize
+0x00004910 : _tek_decomp
+0x00005BFB : (.text)
+0x00005BFB : _HariStartup
+0x00005C04 : _sprintf
+0x00005C04 : (.text)
+0x00005C18 : (.text)
+0x00005C54 : _strtoul0
+0x00005D27 : (.text)
+0x00005D4F : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)
@@ -175,8 +176,8 @@ bss  size :      0(0x00000)
 0x003139A0 : _task_timer
 0x003139A4 : (.data)
 0x00313A84 : (.data)
-0x00313B82 : (.data)
-0x00313BE0 : (.data)
+0x00313BAF : (.data)
+0x00313C0D : (.data)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)

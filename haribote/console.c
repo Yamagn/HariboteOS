@@ -220,6 +220,8 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, int memtotal)
 		cmd_langmode(cons, cmdline);
 	} else if (strncmp(cmdline, "rm ", 3) == 0) {
 		cmd_rm(cons, cmdline);
+	} else if (strncmp(cmdline, "mv ", 3) == 0) {
+		cmd_mv(cons, cmdline);
 	} else if (cmdline[0] != 0) {
 		if (cmd_app(cons, fat, cmdline) == 0) {
 			/* コマンドではなく、アプリでもなく、さらに空行でもない */
@@ -348,12 +350,70 @@ void cmd_rm(struct CONSOLE *cons, char *cmdline)
 {
 	struct FILEINFO *finfo;
 	finfo = file_search(cmdline + 3, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
-	if (finfo != NULL && finfo[x].name[0] != 0x00) {
-		finfo[x].name[0] = 0xe5;
+	if (finfo != NULL && finfo->name[0] != 0x00) {
+		finfo->name[0] = 0xe5;
 		/*TODO: */
 	} else {
 		cons_putstr0(cons, "file not found.");
 		cons_newline(cons);
+	}
+}
+
+void cmd_mv(struct CONSOLE *cons, char *cmdline)
+{
+	struct FILEINFO *finfo;
+	char src[12], dest[12], ext1[4],ext2[4];
+	int i, y;
+	y = 0;
+	for (i = 3; cmdline[i] == ' ';i++);
+	for (; cmdline[i] != ' '; i++) {
+		src[y] = cmdline[i];
+		y++;
+		if(cmdline[i] == '\0') {
+			cons_putstr0(cons, "mv must have 2 argments.");
+			cons_newline(cons);
+			return;
+		}
+	}
+	src[y] = '\0'; 
+	if (cmdline[i] == '\0') {
+		cons_putstr0(cons, "mv must have 2 argments.");
+		cons_newline(cons);
+		return;
+	}
+	for (;cmdline[i] == ' '; i++);
+	y = 0;
+	if(cmdline != NULL) {
+		for (;cmdline[i] != '\0';i++) {
+			dest[y] = cmdline[i];
+			if('a' <= dest[y] && dest[y] <= 'z') {
+				dest[y] -= 0x20;
+			}
+			y++;
+		}
+		dest[y] = '\0';
+	}
+	
+	finfo = file_search(src, (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+	if (finfo != NULL) {
+		for (y = 0; dest[y] != '.'; y++) {
+			if(dest[y] == '\0') {
+				cons_putstr0(cons, "need extention.");
+				cons_newline(cons);
+				return;
+			} 
+		}
+		for (i = 0; i < 11; i++) {
+			finfo->name[i] = ' ';
+		}
+		for (i = 0; dest[i] != '.'; i++) {
+			finfo->name[i] = dest[i];
+		}
+		y = 8;
+		for (i++; dest[i] != '\0'; i++) {
+			finfo->name[y] = dest[i];
+			y++;
+		}
 	}
 }
 
