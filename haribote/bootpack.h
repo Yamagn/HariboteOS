@@ -272,20 +272,23 @@ void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal);
 void cmd_langmode(struct CONSOLE *cons, char *cmdline);
 void cmd_rm(struct CONSOLE *cons, char *cmdline);
 void cmd_mv(struct CONSOLE *cons, char *cmdline);
+void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *buf);
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline);
 int *hrb_api(int edi, int esi, int ebp, int esp, int ebx, int edx, int ecx, int eax);
 int *inthandler0d(int *esp);
 int *inthandler0c(int *esp);
 void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
+int allocClust(int *fat);
 
 /* file.c */
 struct FILEINFO {
 	unsigned char name[8], ext[3], type;
 	char reserve[10];
-	unsigned short time, date;
-	int clustno;
+	unsigned short time, date, clustno;
 	unsigned int size;
 };
+
+void initFinfo(struct FILEINFO *finfo);
 void file_readfat(int *fat, unsigned char *img);
 void file_loadfile(int clustno, int size, char *buf, int *fat, char *img);
 struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max);

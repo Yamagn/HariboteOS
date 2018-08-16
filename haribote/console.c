@@ -275,6 +275,12 @@ void cmd_dir(struct CONSOLE *cons)
 				s[10] = finfo[i].ext[1];
 				s[11] = finfo[i].ext[2];
 				cons_putstr0(cons, s);
+			} else if(finfo[i].type == 0x10) {
+				sprintf(s, "filename.ext   %7d\n", finfo[i].size);
+				for (j = 0; j < 8; j++) {
+					s[j] = finfo[i].name[j];
+				}
+				cons_putstr0(cons, s);
 			}
 		}
 	}
@@ -364,7 +370,7 @@ void cmd_rm(struct CONSOLE *cons, char *cmdline)
 void cmd_mv(struct CONSOLE *cons, char *cmdline)
 {
 	struct FILEINFO *finfo;
-	char src[12], dest[12], ext1[4],ext2[4];
+	char src[12], dest[12];
 	int i, y;
 	y = 0;
 	for (i = 3; cmdline[i] == ' ';i++);
@@ -424,27 +430,41 @@ void cmd_mv(struct CONSOLE *cons, char *cmdline)
 }
 
 void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
-	struct FILEINFO *finfo;
-	int i, y;
-	y = 0;
-	for (i = 0; i < 8; i++) {
-		finfo->name[i] = ' ';
+	struct FILEINFO *finfo, *dir_entries, *root_dir;
+	int i, len;
+	char *fname = cmdline + 6;
+	char *buf;
+	len = strlen(fname);
+	root_dir = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
+	for (i = 0; i < 224; i++) {
+		if (root_dir[i].name[0] == 0x00){
+			finfo = (root_dir + i);
+			break;
+		}
 	}
-	for (i = 6; cmdline[i] != '\0'; i++) {
-		finfo->name[y] = cmdline[i];
-	}
+	strncpy(finfo->name, fname, sizeof(finfo->name));
+	memset(finfo->name + len, ' ', sizeof(finfo->name)-len);
 	finfo->type = 0x10;
 	finfo->size = 0;
 	finfo->clustno = allocClust(fat);
-	if (finfo->clustno = -1) {
+	if (finfo->clustno == 2881) {
 		cons_putstr0(cons, "Not Empty Fat");
 		cons_newline(cons);
 		return;
 	}
+	buf = (char *)(finfo->clustno * 512 + 0x3e00 + ADR_DISKIMG);
 	fat[finfo->clustno] = 0xfff;
-	
-
-	
+	memset(buf, 0, 512);
+	dir_entries = (struct FILEINFO *)buf;
+	initFinfo(dir_entries);
+	initFinfo(dir_entries + 1);
+	dir_entries->name[0] = '.';
+	(dir_entries + 1)->name[0] = '.';
+	(dir_entries + 1)->name[1] = '.';
+	dir_entries->type = 0x10;
+	(dir_entries + 1)->type = 0x10;
+	dir_entries->clustno = finfo->clustno;
+	(dir_entries + 1)->clustno = 0;
 }
 
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
@@ -814,8 +834,19 @@ int allocClust(int *fat) {
 	int i;
 	for (i = 0; fat[i] != 0; i++) {
 		if (i >= 2880) {
-			return -1;
+			return 2881;
 		}
 	}
 	return i;
+}
+
+void initFinfo(struct FILEINFO *finfo) {
+	memset(finfo->name, ' ', sizeof(finfo->name));
+	memset(finfo->ext, ' ', sizeof(finfo->ext));
+	finfo->type = 0x20;
+	memset(finfo->reserve, 0, sizeof(finfo->reserve));
+	finfo->time = 0;
+	finfo->date = 0;
+	finfo->clustno = -1;
+	finfo->size = 0;
 }
