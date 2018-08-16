@@ -226,6 +226,8 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, int memtotal)
 		cmd_mv(cons, cmdline);
 	} else if (strncmp(cmdline, "mkdir ", 6) == 0) {
 		cmd_mkdir(cons, cmdline, fat);
+	} else if (strncmp(cmdline, "touch ", 6) == 0) {
+		cmd_touch(cons, cmdline, fat);
 	} else if (cmdline[0] != 0) {
 		if (cmd_app(cons, fat, cmdline) == 0) {
 			/* コマンドではなく、アプリでもなく、さらに空行でもない */
@@ -299,6 +301,8 @@ void cmd_ddir(struct CONSOLE *cons, char *cmdline)
 	dinfo = file_search(cmdline + 5, (struct FILEINFO *)(ADR_DISKIMG + 0x2600), 224); 
 	if (dinfo == 0 && dinfo->type != 0x10) {
 		cons_putstr0(cons, "not found directory.");
+		cons_newline(cons);
+		return;
 	}
 	buf = (char *)(dinfo->clustno * 512 + 0x3e00 + ADR_DISKIMG);
 	dir_entries = (struct FILEINFO *)buf;
@@ -471,12 +475,29 @@ void cmd_mv(struct CONSOLE *cons, char *cmdline)
 }
 
 void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
-	struct FILEINFO *finfo, *dir_entries, *root_dir;
+	struct FILEINFO *finfo, *dir_entries, *root_dir, *dinfo;
 	int i, len;
-	char *fname = cmdline + 6;
+	char *fname, *dname, *new_dname;
 	char *buf;
 	len = strlen(fname);
 	root_dir = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
+	for (i = 0; (cmdline + 6)[i] != '\0'; i++) {
+		if((cmdline + 6)[i] == '/') {
+			strncpy(dname, (cmdline + 6), i - 6);
+			strncpy(new_dname, (cmdline + 6), 3);
+			dinfo = file_search(dname, (struct FILEINFO *)ADR_DISKIMG + 0x2600, 244);
+			if (dinfo == 0 || dinfo->type != 0x10) {
+				cons_putstr0(cons, "Not Found Directory.");
+				cons_newline(cons);
+				return;
+			}
+			buf = (char *)(finfo->clustno * 512 + 0x3e00 + ADR_DISKIMG);
+			dir_entries = (struct FILEINFO *) buf;
+			for (i = 0; )
+		} 
+	} 
+
+	
 	for (i = 0; i < 224; i++) {
 		if (root_dir[i].name[0] == 0x00){
 			finfo = (root_dir + i);
@@ -514,6 +535,47 @@ void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
 	(dir_entries + 1)->clustno = 0;
 }
 
+void cmd_touch(struct CONSOLE *cons, char *cmdline, int *fat) 
+{
+	struct FILEINFO *finfo, *root_dir;
+	char *buf;
+	int i;
+	root_dir = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
+	for (i = 0; i < 224; i++) {
+		if (root_dir[i].name[0] == 0x00){
+			finfo = (root_dir + i);
+			break;
+		}
+	}
+	memset(finfo->name, ' ', sizeof(finfo->name));
+	memset(finfo->ext, ' ', sizeof(finfo->ext));
+	for (i = 0; (cmdline + 6)[i] != '.'; i++) {
+		finfo->name[i] = (cmdline + 6)[i];
+	}
+	strcpy(finfo->ext, cmdline + 6 + i + 1);
+
+	for (i = 0; i < 8; i++) {
+		if ('a' <= finfo->name[i] && finfo->name[i] <= 'z') {
+			finfo->name[i] -= 0x20;
+		}
+	}
+	for (i = 0; i < 3; i++) {
+		if ('a' <= finfo->ext[i] && finfo->ext[i] <= 'z') {
+			finfo->ext[i] -= 0x20;
+		}
+	}
+	finfo->type = 0x20;
+	finfo->size = 0;
+	finfo->clustno = allocClust(fat);
+	if (finfo->clustno == 2881) {
+		cons_putstr0(cons, "Not Empty FAT");
+		cons_newline(cons);
+		return;
+	}
+	buf = (char *)(finfo->clustno * 512 + 0x3e00 + ADR_DISKIMG);
+	fat[finfo->clustno] = 0xfff;
+	memset(buf, 0, 512);
+}
 int cmd_app(struct CONSOLE *cons, int *fat, char *cmdline)
 {
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
