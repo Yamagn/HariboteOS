@@ -210,6 +210,8 @@ void cons_runcmd(char *cmdline, struct CONSOLE *cons, int *fat, int memtotal)
 		cmd_cls(cons);
 	} else if (strcmp(cmdline, "dir") == 0 && cons->sht != 0) {
 		cmd_dir(cons);
+	} else if (strncmp(cmdline, "ddir ", 5) == 0) {
+		cmd_ddir(cons, cmdline);
 	} else if (strcmp(cmdline, "exit") == 0) {
 		cmd_exit(cons, fat);
 	} else if (strncmp(cmdline, "start ", 6) == 0) {
@@ -279,6 +281,45 @@ void cmd_dir(struct CONSOLE *cons)
 				sprintf(s, "filename");
 				for (j = 0; j < 8; j++) {
 					s[j] = finfo[i].name[j];
+				}
+				cons_putstr0(cons, s);
+			}
+		}
+	}
+	cons_newline(cons);
+	return;
+}
+
+void cmd_ddir(struct CONSOLE *cons, char *cmdline)
+{
+	struct FILEINFO *dinfo, *dir_entries;
+	int i, j;
+	char *buf;
+	char s[30];
+	dinfo = file_search(cmdline + 5, (struct FILEINFO *)(ADR_DISKIMG + 0x2600), 224); 
+	if (dinfo == 0 && dinfo->type != 0x10) {
+		cons_putstr0(cons, "not found directory.");
+	}
+	buf = (char *)(dinfo->clustno * 512 + 0x3e00 + ADR_DISKIMG);
+	dir_entries = (struct FILEINFO *)buf;
+	for (i = 0; i < 512; i++) {
+		if (dir_entries[i].name[0] == 0x00) {
+			break;
+		}
+		if (dir_entries[i].name[0] != 0xe5) {
+			if ((dir_entries[i].type & 0x18) == 0) {
+				sprintf(s, "filename.ext   %7d\n", dir_entries[i].size);
+				for (j = 0; j < 8; j++) {
+					s[j] = dir_entries[i].name[j];
+				}
+				s[ 9] = dir_entries[i].ext[0];
+				s[10] = dir_entries[i].ext[1];
+				s[11] = dir_entries[i].ext[2];
+				cons_putstr0(cons, s);
+			} else if(dir_entries[i].type == 0x10) {
+				sprintf(s, "filename\n");
+				for (j = 0; j < 8; j++) {
+					s[j] = dir_entries[i].name[j];
 				}
 				cons_putstr0(cons, s);
 			}
@@ -449,6 +490,7 @@ void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
 	}
 	strncpy(finfo->name, fname, sizeof(finfo->name));
 	memset(finfo->name + len, ' ', sizeof(finfo->name)-len);
+	memset(finfo->ext, ' ', sizeof(finfo->ext));
 	finfo->type = 0x10;
 	finfo->size = 0;
 	finfo->clustno = allocClust(fat);
