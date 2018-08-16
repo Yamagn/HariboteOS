@@ -276,7 +276,7 @@ void cmd_dir(struct CONSOLE *cons)
 				s[11] = finfo[i].ext[2];
 				cons_putstr0(cons, s);
 			} else if(finfo[i].type == 0x10) {
-				sprintf(s, "filename.ext   %7d\n", finfo[i].size);
+				sprintf(s, "filename");
 				for (j = 0; j < 8; j++) {
 					s[j] = finfo[i].name[j];
 				}
@@ -442,13 +442,18 @@ void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
 			break;
 		}
 	}
+	for (i = 0; i < 8; i++) {
+		if ('a' <= fname[i] && fname[i] <= 'z') {
+			fname[i] -= 0x20;
+		}
+	}
 	strncpy(finfo->name, fname, sizeof(finfo->name));
 	memset(finfo->name + len, ' ', sizeof(finfo->name)-len);
 	finfo->type = 0x10;
 	finfo->size = 0;
 	finfo->clustno = allocClust(fat);
 	if (finfo->clustno == 2881) {
-		cons_putstr0(cons, "Not Empty Fat");
+		cons_putstr0(cons, "Not Empty FAT");
 		cons_newline(cons);
 		return;
 	}

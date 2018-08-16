@@ -1,5 +1,5 @@
-text size :  25377(0x06321)
-data size :  15442(0x03C52)
+text size :  25394(0x06332)
+data size :  15451(0x03C5B)
 bss  size :      0(0x00000)
 
 0x00000000 : (.text)
@@ -122,40 +122,40 @@ bss  size :      0(0x00000)
 0x00003806 : _cmd_mem
 0x00003847 : _cmd_cls
 0x000038A0 : _cmd_dir
-0x0000396C : _cmd_exit
-0x00003A04 : _cmd_start
-0x00003A8E : _cmd_ncst
-0x00003AF2 : _cmd_langmode
-0x00003B30 : _cmd_rm
-0x00003B7A : _cmd_mv
-0x00003CB1 : _cmd_mkdir
-0x00003DD3 : _cmd_app
-0x00004019 : _hrb_api
-0x000046D7 : _inthandler0c
-0x00004720 : _inthandler0d
-0x00004769 : _hrb_api_linewin
-0x00004845 : _allocClust
-0x0000486B : _initFinfo
-0x000048BB : _file_readfat
-0x000048BB : (.text)
-0x0000490D : _file_loadfile
-0x00004973 : _file_search
-0x00004A1E : _file_loadfile2
-0x00004A9D : (.text)
-0x00004AC2 : _tek_getsize
-0x00004B18 : _tek_decomp
-0x00005E03 : (.text)
-0x00005E03 : _HariStartup
-0x00005E0C : _memset
-0x00005E0C : (.text)
-0x00005E2D : _sprintf
-0x00005E2D : (.text)
-0x00005E41 : _strncpy
-0x00005E41 : (.text)
-0x00005E7C : (.text)
-0x00005EB8 : _strtoul0
-0x00005F8B : (.text)
-0x00005FB3 : _vsprintf
+0x00003965 : _cmd_exit
+0x000039FD : _cmd_start
+0x00003A87 : _cmd_ncst
+0x00003AEB : _cmd_langmode
+0x00003B29 : _cmd_rm
+0x00003B73 : _cmd_mv
+0x00003CAA : _cmd_mkdir
+0x00003DE4 : _cmd_app
+0x0000402A : _hrb_api
+0x000046E8 : _inthandler0c
+0x00004731 : _inthandler0d
+0x0000477A : _hrb_api_linewin
+0x00004856 : _allocClust
+0x0000487C : _initFinfo
+0x000048CC : _file_readfat
+0x000048CC : (.text)
+0x0000491E : _file_loadfile
+0x00004984 : _file_search
+0x00004A2F : _file_loadfile2
+0x00004AAE : (.text)
+0x00004AD3 : _tek_getsize
+0x00004B29 : _tek_decomp
+0x00005E14 : (.text)
+0x00005E14 : _HariStartup
+0x00005E1D : _memset
+0x00005E1D : (.text)
+0x00005E3E : _sprintf
+0x00005E3E : (.text)
+0x00005E52 : _strncpy
+0x00005E52 : (.text)
+0x00005E8D : (.text)
+0x00005EC9 : _strtoul0
+0x00005F9C : (.text)
+0x00005FC4 : _vsprintf
 0x00000000 : (.data)
 0x00000000 : (.data)
 0x00000000 : (.data)
@@ -185,8 +185,8 @@ bss  size :      0(0x00000)
 0x003139A0 : _task_timer
 0x003139A4 : (.data)
 0x00313A84 : (.data)
-0x00313BD4 : (.data)
-0x00313C32 : (.data)
+0x00313BDD : (.data)
+0x00313C3B : (.data)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
 0x00000000 : (.bss)
