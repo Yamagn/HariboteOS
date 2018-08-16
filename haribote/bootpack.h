@@ -249,7 +249,7 @@ void change_wtitle8(struct SHEET *sht, char act);
 /* console.c */
 struct CONSOLE {
 	struct SHEET *sht;
-	int cur_x, cur_y, cur_c;
+	int cur_x, cur_y, cur_c, width, height;
 	struct TIMER *timer;
 };
 struct FILEHANDLE {
@@ -257,7 +257,7 @@ struct FILEHANDLE {
 	int size;
 	int pos;
 };
-void console_task(struct SHEET *sheet, int memtotal);
+void console_task(struct SHEET *sheet, int memtotal, int width, int height);
 void cons_putchar(struct CONSOLE *cons, int chr, char move);
 void cons_newline(struct CONSOLE *cons);
 void cons_putstr0(struct CONSOLE *cons, char *s);
@@ -281,6 +281,7 @@ int *inthandler0d(int *esp);
 int *inthandler0c(int *esp);
 void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col);
 int allocClust(int *fat);
+void capitalize(char *cs, int n);
 
 /* file.c */
 struct FILEINFO {
@@ -290,6 +291,7 @@ struct FILEINFO {
 	unsigned int size;
 };
 
+int parent_info(char **dir_name, struct FILEINFO *parent_dir, struct FILEINFO **entry_table);
 void initFinfo(struct FILEINFO *finfo);
 void file_readfat(int *fat, unsigned char *img);
 void file_loadfile(int clustno, int size, char *buf, int *fat, char *img);
@@ -301,5 +303,5 @@ int tek_getsize(unsigned char *p);
 int tek_decomp(unsigned char *p, char *q, int size);
 
 /* bootpack.c */
-struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal);
-struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal);
+struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal, int width, int height);
+struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal, int width, int height);

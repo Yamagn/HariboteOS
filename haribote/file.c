@@ -1,9 +1,9 @@
-/* ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ÖŒW */
+/* ?¿½t?¿½@?¿½C?¿½?¿½?¿½ÖŒW */
 
 #include "bootpack.h"
 
 void file_readfat(int *fat, unsigned char *img)
-/* ï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½ï¿½ï¿½FATï¿½Ìˆï¿½ï¿½kï¿½ï¿½Æ‚ï¿½ */
+/* ?¿½f?¿½B?¿½X?¿½N?¿½C?¿½?¿½?¿½[?¿½W?¿½?¿½?¿½FAT?¿½Ìˆï¿½?¿½k?¿½?¿½Æ‚ï¿½ */
 {
 	int i, j = 0;
 	for (i = 0; i < 2880; i += 2) {
@@ -44,14 +44,14 @@ struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max)
 	j = 0;
 	for (i = 0; name[i] != 0; i++) {
 		if (j >= 11) { 
-			return 0; /* ï¿½ï¿½ï¿½Â‚ï¿½ï¿½ï¿½È‚ï¿½ï¿½ï¿½ï¿½ï¿½ */ 
+			return 0; /* ?¿½?¿½?¿½Â‚ï¿½?¿½?¿½È‚ï¿½?¿½?¿½?¿½?¿½ */ 
 		} 
 		if (name[i] == '.' && j <= 8 && finfo->type != 0x10) {
 			j = 8;
 		} else {
 			s[j] = name[i];
 			if ('a' <= s[j] && s[j] <= 'z') {
-				/* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í‘å•¶ï¿½ï¿½ï¿½É’ï¿½ï¿½ï¿½ */
+				/* ?¿½?¿½?¿½?¿½?¿½?¿½?¿½Í‘å•¶?¿½?¿½?¿½É’ï¿½?¿½?¿½ */
 				s[j] -= 0x20;
 			} 
 			j++;
@@ -67,12 +67,12 @@ struct FILEINFO *file_search(char *name, struct FILEINFO *finfo, int max)
 					goto next;
 				}
 			}
-			return finfo + i; /* ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â‚ï¿½ï¿½ï¿½ï¿½ï¿½ */
+			return finfo + i; /* ?¿½t?¿½@?¿½C?¿½?¿½?¿½?¿½?¿½?¿½?¿½Â‚ï¿½?¿½?¿½?¿½?¿½ */
 		}
 next:
 		i++;
 	}
-	return 0; /* ï¿½ï¿½ï¿½Â‚ï¿½ï¿½ï¿½È‚ï¿½ï¿½ï¿½ï¿½ï¿½ */
+	return 0; /* ?¿½?¿½?¿½Â‚ï¿½?¿½?¿½È‚ï¿½?¿½?¿½?¿½?¿½ */
 }
 
 char *file_loadfile2(int clustno, int *psize, int *fat)
@@ -84,7 +84,7 @@ char *file_loadfile2(int clustno, int *psize, int *fat)
 	file_loadfile(clustno, size, buf, fat, (char *) (ADR_DISKIMG + 0x003e00));
 	if (size >= 17) {
 		size2 = tek_getsize(buf);
-		if (size2 > 0) {	/* tekï¿½ï¿½ï¿½kï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ */
+		if (size2 > 0) {	/* tek?¿½?¿½?¿½k?¿½?¿½?¿½?¿½?¿½?¿½?¿½?¿½?¿½Ä‚ï¿½?¿½?¿½ */
 			buf2 = (char *) memman_alloc_4k(memman, size2);
 			tek_decomp(buf, buf2, size2);
 			memman_free_4k(memman, (int) buf, size);

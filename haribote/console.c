@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void console_task(struct SHEET *sheet, int memtotal)
+void console_task(struct SHEET *sheet, int memtotal, int width, int height)
 {
 	struct TASK *task = task_now();
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
@@ -15,6 +15,8 @@ void console_task(struct SHEET *sheet, int memtotal)
 	unsigned char *nihongo = (char *) *((int *) 0x0fe8);
 
 	cons.sht = sheet;
+	cons.width = width;
+	cons.height = height;
 	cons.cur_x =  8;
 	cons.cur_y = 28;
 	cons.cur_c = -1;
@@ -99,7 +101,7 @@ void console_task(struct SHEET *sheet, int memtotal)
 					cons_putchar(&cons, '>', 1);
 				} else {
 					/* 一般文字 */
-					if (cons.cur_x < 240) {
+					if (cons.cur_x < cons.width * 30) {
 						/* 一文字表示してから、カーソルを1つ進める */
 						cmdline[cons.cur_x / 8 - 2] = i - 256;
 						cons_putchar(&cons, i - 256, 1);
@@ -129,7 +131,7 @@ void cons_putchar(struct CONSOLE *cons, int chr, char move)
 				putfonts8_asc_sht(cons->sht, cons->cur_x, cons->cur_y, COL8_FFFFFF, COL8_000000, " ", 1);
 			}
 			cons->cur_x += 8;
-			if (cons->cur_x == 8 + 240) {
+			if (cons->cur_x == 8 +8 * cons->width) {
 				cons_newline(cons);
 			}
 			if (((cons->cur_x - 8) & 0x1f) == 0) {
@@ -147,7 +149,7 @@ void cons_putchar(struct CONSOLE *cons, int chr, char move)
 		if (move != 0) {
 			/* moveが0のときはカーソルを進めない */
 			cons->cur_x += 8;
-			if (cons->cur_x == 8 + 240) {
+			if (cons->cur_x == 8 + 8 * cons->width) {
 				cons_newline(cons);
 			}
 		}
@@ -160,22 +162,22 @@ void cons_newline(struct CONSOLE *cons)
 	int x, y;
 	struct SHEET *sheet = cons->sht;
 	struct TASK *task = task_now();
-	if (cons->cur_y < 28 + 112) {
+	if (cons->cur_y < 28 + 16 * (cons->height - 1)) {
 		cons->cur_y += 16; /* 次の行へ */
 	} else {
 		/* スクロール */
 		if (sheet != 0) {
-			for (y = 28; y < 28 + 112; y++) {
-				for (x = 8; x < 8 + 240; x++) {
+			for (y = 28; y < 28 + 16 * (cons->height - 1); y++) {
+				for (x = 8; x < 8 + 8 * cons->width; x++) {
 					sheet->buf[x + y * sheet->bxsize] = sheet->buf[x + (y + 16) * sheet->bxsize];
 				}
 			}
-			for (y = 28 + 112; y < 28 + 128; y++) {
-				for (x = 8; x < 8 + 240; x++) {
+			for (y = 28 + 16 * (cons->height -1); y < 28 + 16 * cons->height; y++) {
+				for (x = 8; x < 8 + 8 * cons->width; x++) {
 					sheet->buf[x + y * sheet->bxsize] = COL8_000000;
 				}
 			}
-			sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
+			sheet_refresh(sheet, 8, 28, 8 + 8 * cons->width, 28 + 16 * cons->height);
 		}
 	}
 	cons->cur_x = 8;
@@ -255,7 +257,7 @@ void cmd_cls(struct CONSOLE *cons)
 			sheet->buf[x + y * sheet->bxsize] = COL8_000000;
 		}
 	}
-	sheet_refresh(sheet, 8, 28, 8 + 240, 28 + 128);
+	sheet_refresh(sheet, 8, 28, 8 + 8 * cons->width, 28 + 16 * cons->height);
 	cons->cur_y = 28;
 	return;
 }
@@ -294,7 +296,7 @@ void cmd_dir(struct CONSOLE *cons)
 
 void cmd_ddir(struct CONSOLE *cons, char *cmdline)
 {
-	struct FILEINFO *dinfo, *dir_entries;
+	/*struct FILEINFO *dinfo, *dir_entries;
 	int i, j;
 	char *buf;
 	char s[30];
@@ -330,6 +332,47 @@ void cmd_ddir(struct CONSOLE *cons, char *cmdline)
 		}
 	}
 	cons_newline(cons);
+	return;*/
+	char *name = cmdline + 5;
+	struct FILEINFO *finfo = NULL;
+	struct FILEINFO *entry_table = (struct FILEINFO *)(ADR_DISKIMG + 0x2600);
+	if(parent_info(&name, finfo, &entry_table) != 0) {
+		cons_putstr0(cons, "Not Found Directory.");
+		cons_putstr0(cons, name);
+		cons_newline(cons);
+		return;
+	}
+	finfo = entry_table;
+	int i, j;
+	char s[30];
+	for (i = 0; i < 16; i++) {
+		if (finfo[i].name[0] == 0x00) {
+			break;
+		}
+		// cons_putstr0(cons, "Debug");
+		// cons_newline(cons);
+		if (finfo[i].name[0] != 0xe5) {
+			if ((finfo[i].type & 0x18) == 0) {
+				sprintf(s, "filename.ext   %7d\n", finfo[i].size);
+				for (j = 0; j < 8; j++) {
+					s[j] = finfo[i].name[j];
+				}
+				s[ 9] = finfo[i].ext[0];
+				s[10] = finfo[i].ext[1];
+				s[11] = finfo[i].ext[2];
+				cons_putstr0(cons, s);
+			} else if(finfo[i].type == 0x10) {
+				sprintf(s, "filename");
+				for (j = 0; j < 8; j++) {
+					s[j] = finfo[i].name[j];
+				}
+				cons_putstr0(cons, s);
+			}
+		}
+	}
+	cons_newline(cons);
+	// cons_putstr0(cons, name);
+	// cons_newline(cons);
 	return;
 }
 
@@ -358,7 +401,7 @@ void cmd_exit(struct CONSOLE *cons, int *fat)
 void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal)
 {
 	struct SHTCTL *shtctl = (struct SHTCTL *) *((int *) 0x0fe4);
-	struct SHEET *sht = open_console(shtctl, memtotal);
+	struct SHEET *sht = open_console(shtctl, memtotal, 80, 24);
 	struct FIFO32 *fifo = &sht->task->fifo;
 	int i;
 	sheet_slide(sht, 32, 4);
@@ -374,7 +417,7 @@ void cmd_start(struct CONSOLE *cons, char *cmdline, int memtotal)
 
 void cmd_ncst(struct CONSOLE *cons, char *cmdline, int memtotal)
 {
-	struct TASK *task = open_constask(0, memtotal);
+	struct TASK *task = open_constask(0, memtotal, 80, 24);
 	struct FIFO32 *fifo = &task->fifo;
 	int i;
 	/* コマンドラインに入力された文字列を、一文字ずつ新しいコンソールに入力 */
@@ -475,64 +518,68 @@ void cmd_mv(struct CONSOLE *cons, char *cmdline)
 }
 
 void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
-	struct FILEINFO *finfo, *dir_entries, *root_dir, *dinfo;
-	int i, len;
-	char *fname, *dname, *new_dname;
-	char *buf;
-	len = strlen(fname);
-	root_dir = (struct FILEINFO *) (ADR_DISKIMG + 0x002600);
-	for (i = 0; (cmdline + 6)[i] != '\0'; i++) {
-		if((cmdline + 6)[i] == '/') {
-			strncpy(dname, (cmdline + 6), i - 6);
-			strncpy(new_dname, (cmdline + 6), 3);
-			dinfo = file_search(dname, (struct FILEINFO *)ADR_DISKIMG + 0x2600, 244);
-			if (dinfo == 0 || dinfo->type != 0x10) {
-				cons_putstr0(cons, "Not Found Directory.");
-				cons_newline(cons);
-				return;
-			}
-			buf = (char *)(finfo->clustno * 512 + 0x3e00 + ADR_DISKIMG);
-			dir_entries = (struct FILEINFO *) buf;
-			for (i = 0; )
-		} 
-	} 
-
-	
-	for (i = 0; i < 224; i++) {
-		if (root_dir[i].name[0] == 0x00){
-			finfo = (root_dir + i);
-			break;
-		}
-	}
-	for (i = 0; i < 8; i++) {
-		if ('a' <= fname[i] && fname[i] <= 'z') {
-			fname[i] -= 0x20;
-		}
-	}
-	strncpy(finfo->name, fname, sizeof(finfo->name));
-	memset(finfo->name + len, ' ', sizeof(finfo->name)-len);
-	memset(finfo->ext, ' ', sizeof(finfo->ext));
-	finfo->type = 0x10;
-	finfo->size = 0;
-	finfo->clustno = allocClust(fat);
-	if (finfo->clustno == 2881) {
-		cons_putstr0(cons, "Not Empty FAT");
+	int i = 0;
+	char * dir_name = cmdline + 6;
+	struct FILEINFO *parent_dir = NULL; // (struct FILEINFO *)(ADR_DISKIMG + 0x2600)
+	struct FILEINFO *entry_table = (struct FILEINFO *)(ADR_DISKIMG + 0x2600);
+	int new_clust = allocClust(fat);
+	if (new_clust == -1) {
+		cons_putstr0(cons, "FAT is Full.");
 		cons_newline(cons);
 		return;
 	}
-	buf = (char *)(finfo->clustno * 512 + 0x3e00 + ADR_DISKIMG);
-	fat[finfo->clustno] = 0xfff;
-	memset(buf, 0, 512);
-	dir_entries = (struct FILEINFO *)buf;
-	initFinfo(dir_entries);
-	initFinfo(dir_entries + 1);
-	dir_entries->name[0] = '.';
-	(dir_entries + 1)->name[0] = '.';
-	(dir_entries + 1)->name[1] = '.';
-	dir_entries->type = 0x10;
-	(dir_entries + 1)->type = 0x10;
-	dir_entries->clustno = finfo->clustno;
-	(dir_entries + 1)->clustno = 0;
+	if (parent_info(&dir_name, parent_dir, &entry_table) != 0) {
+		cons_putstr0(cons, "Not Found Directory.");
+		cons_newline(cons);
+		return;
+	}
+	// memset(buf, 0, 512);
+	struct FILEINFO *new = NULL;
+	for (i = 0; i < 244; i++) {
+		if(entry_table[i].name[0] == 0x00) {
+			new = entry_table + i;
+			break;
+		}
+	}
+	if (new == NULL) {
+		cons_putstr0(cons, "Directory entory Full.");
+		cons_newline(cons);
+		return;
+	}
+	// cons_putstr0(cons, "Debug: ");
+	// cons_putstr0(cons, dir_name);
+	// cons_newline(cons);
+	capitalize(dir_name, 8);
+	int len = strlen(dir_name);
+	strncpy(new->name, dir_name, sizeof(new->name));
+	memset(new->name + len, ' ', sizeof(new->name)-len);
+	memset(new->ext, ' ', sizeof(new->ext));
+	new->type = 0x10;
+	new->size = 0;
+	new->clustno = new_clust;
+	fat[new->clustno] = 0xfff;
+	struct FILEINFO *new_entries = (struct FILEINFO *)(new->clustno * 512 + 0x3e00 + ADR_DISKIMG);
+	initFinfo(&new_entries[0]);
+	new_entries[0].name[0] = '.';
+	new_entries[0].type = 0x10;
+	new_entries[0].clustno = new->clustno;
+	initFinfo(&new_entries[1]);
+	new_entries[1].name[0] = '.';
+	new_entries[1].name[1] = '.';
+	new_entries[1].type = 0x10;
+	new_entries[1].clustno = parent_dir->clustno;
+
+}
+
+char *strchr(char *cs, int c)
+{
+	while(*cs) {
+		if(*cs == c) {
+			return cs;
+		}
+		cs++;
+	}
+	return NULL;
 }
 
 void cmd_touch(struct CONSOLE *cons, char *cmdline, int *fat) 
@@ -941,12 +988,12 @@ void hrb_api_linewin(struct SHEET *sht, int x0, int y0, int x1, int y1, int col)
 
 int allocClust(int *fat) {
 	int i;
-	for (i = 0; fat[i] != 0; i++) {
-		if (i >= 2880) {
-			return 2881;
+	for (i = 0; i < 2880; i++) {
+		if (fat[i] == 0) {
+			return i;
 		}
 	}
-	return i;
+	return -1;
 }
 
 void initFinfo(struct FILEINFO *finfo) {
@@ -958,4 +1005,29 @@ void initFinfo(struct FILEINFO *finfo) {
 	finfo->date = 0;
 	finfo->clustno = -1;
 	finfo->size = 0;
+}
+
+void capitalize(char *cs, int n) {
+	int i;
+	for (i = 0; i < n; i++) {
+		if ('a' <= cs[i] && cs[i] <= 'z') {
+			cs[i] -= 0x20;
+		}
+	}
+}
+
+int parent_info(char **dir_name, struct FILEINFO *parent_dir, struct FILEINFO **entry_table) {
+	char *slash_pos;
+	int entry_size = 244;
+	while ((slash_pos = strchr(*dir_name, '/')) != NULL) { // '/'があれば
+		slash_pos[0] = '\0';
+		parent_dir = file_search(*dir_name, *entry_table, entry_size);
+		if (parent_dir == 0 || parent_dir->type != 0x10) {
+			return -1;
+		}
+		*dir_name = slash_pos + 1;
+		*entry_table = (struct FILEINFO *)(parent_dir->clustno * 512 + 0x3e00 + ADR_DISKIMG);
+		entry_size = 16;
+	}
+	return 0;
 }

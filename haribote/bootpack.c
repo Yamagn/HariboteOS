@@ -22,7 +22,7 @@ void HariMain(void)
 	struct MOUSE_DEC mdec;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	unsigned char *buf_back, buf_mouse[256];
-	struct SHEET *sht_back, *sht_mouse;
+	struct SHEET *sht_back, *sht_mouse, *sht_cons;
 	struct TASK *task_a, *task;
 	static char keytable0[0x80] = {
 		0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '^', 0x08, 0,
@@ -84,7 +84,7 @@ void HariMain(void)
 	init_screen8(buf_back, binfo->scrnx, binfo->scrny);
 
 	/* sht_cons */
-	key_win = open_console(shtctl, memtotal);
+	sht_cons = key_win = open_console(shtctl, memtotal, 80, 24);
 
 	/* sht_mouse */
 	sht_mouse = sheet_alloc(shtctl);
@@ -123,6 +123,21 @@ void HariMain(void)
 		}
 	}
 	*((int *) 0x0fe8) = (int) nihongo;
+
+	/* autoexec.bat があれば、内容をすべて console に送信 */
+ 	finfo = file_search("autoexec.bat", (struct FILEINFO *) (ADR_DISKIMG + 0x002600), 224);
+ 	if (finfo != 0) {
+ 		int real_size;
+ 		unsigned char *autoexec;
+ 		
+ 		i = finfo->size;
+ 		autoexec = file_loadfile2(finfo->clustno, &i, fat);
+ 		real_size = i;
+ 		for (i = 0; i < real_size; i++) {
+ 			fifo32_put(&sht_cons->task->fifo, autoexec[i] + 256);
+ 		}
+ 	}
+
 	memman_free_4k(memman, (int) fat, 4 * 2880);
 
 	for (;;) {
@@ -229,7 +244,7 @@ void HariMain(void)
 					if (key_win != 0) {
 						keywin_off(key_win);
 					}
-					key_win = open_console(shtctl, memtotal);
+					key_win = open_console(shtctl, memtotal, 80, 24);
 					sheet_slide(key_win, 32, 4);
 					sheet_updown(key_win, shtctl->top);
 					keywin_on(key_win);
@@ -359,13 +374,13 @@ void keywin_on(struct SHEET *key_win)
 	return;
 }
 
-struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal)
+struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal, int width, int height)
 {
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	struct TASK *task = task_alloc();
 	int *cons_fifo = (int *) memman_alloc_4k(memman, 128 * 4);
 	task->cons_stack = memman_alloc_4k(memman, 64 * 1024);
-	task->tss.esp = task->cons_stack + 64 * 1024 - 12;
+	task->tss.esp = task->cons_stack + 64 * 1024 - 20;
 	task->tss.eip = (int) &console_task;
 	task->tss.es = 1 * 8;
 	task->tss.cs = 2 * 8;
@@ -375,20 +390,24 @@ struct TASK *open_constask(struct SHEET *sht, unsigned int memtotal)
 	task->tss.gs = 1 * 8;
 	*((int *) (task->tss.esp + 4)) = (int) sht;
 	*((int *) (task->tss.esp + 8)) = memtotal;
+	*((int *) (task->tss.esp + 12)) = width;
+	*((int *) (task->tss.esp + 16)) = height;
 	task_run(task, 2, 2); /* level=2, priority=2 */
 	fifo32_init(&task->fifo, 128, cons_fifo, task);
 	return task;
 }
 
-struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal)
+struct SHEET *open_console(struct SHTCTL *shtctl, unsigned int memtotal, int width, int height)
 {
+	int win_xsize = 8 * width + 16;
+	int win_ysize = 16 * height + 37;
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	struct SHEET *sht = sheet_alloc(shtctl);
-	unsigned char *buf = (unsigned char *) memman_alloc_4k(memman, 256 * 165);
-	sheet_setbuf(sht, buf, 256, 165, -1); /* 透明色なし */
-	make_window8(buf, 256, 165, "console", 0);
-	make_textbox8(sht, 8, 28, 240, 128, COL8_000000);
-	sht->task = open_constask(sht, memtotal);
+	unsigned char *buf = (unsigned char *) memman_alloc_4k(memman, win_xsize * win_ysize);
+	sheet_setbuf(sht, buf, win_xsize, win_ysize, -1); /* 透明色なし */
+	make_window8(buf, win_xsize, win_ysize, "console", 0);
+	make_textbox8(sht, 8, 28, 8 * width, 16 * height, COL8_000000);
+	sht->task = open_constask(sht, memtotal, width, height);
 	sht->flags |= 0x20;	/* カーソルあり */
 	return sht;
 }
@@ -407,7 +426,7 @@ void close_console(struct SHEET *sht)
 {
 	struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
 	struct TASK *task = sht->task;
-	memman_free_4k(memman, (int) sht->buf, 256 * 165);
+	memman_free_4k(memman, (int) sht->buf, sht->bxsize * sht->bysize);
 	sheet_free(sht);
 	close_constask(task);
 	return;
