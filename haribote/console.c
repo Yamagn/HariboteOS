@@ -334,15 +334,13 @@ void cmd_ddir(struct CONSOLE *cons, char *cmdline)
 	cons_newline(cons);
 	return;*/
 	char *name = cmdline + 5;
-	struct FILEINFO *finfo = NULL;
-	struct FILEINFO *entry_table = (struct FILEINFO *)(ADR_DISKIMG + 0x2600);
-	if(parent_info(&name, finfo, &entry_table) != 0) {
+	struct FILEINFO *finfo;
+	if(parent_info(&name, &finfo) != 0) {
 		cons_putstr0(cons, "Not Found Directory.");
 		cons_putstr0(cons, name);
 		cons_newline(cons);
 		return;
 	}
-	finfo = entry_table;
 	int i, j;
 	char s[30];
 	for (i = 0; i < 16; i++) {
@@ -521,14 +519,13 @@ void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
 	int i = 0;
 	char * dir_name = cmdline + 6;
 	struct FILEINFO *parent_dir = NULL; // (struct FILEINFO *)(ADR_DISKIMG + 0x2600)
-	struct FILEINFO *entry_table = (struct FILEINFO *)(ADR_DISKIMG + 0x2600);
 	int new_clust = allocClust(fat);
 	if (new_clust == -1) {
 		cons_putstr0(cons, "FAT is Full.");
 		cons_newline(cons);
 		return;
 	}
-	if (parent_info(&dir_name, parent_dir, &entry_table) != 0) {
+	if (parent_info(&dir_name, &parent_dir) != 0) {
 		cons_putstr0(cons, "Not Found Directory.");
 		cons_newline(cons);
 		return;
@@ -536,8 +533,8 @@ void cmd_mkdir(struct CONSOLE *cons, char *cmdline, int *fat) {
 	// memset(buf, 0, 512);
 	struct FILEINFO *new = NULL;
 	for (i = 0; i < 244; i++) {
-		if(entry_table[i].name[0] == 0x00) {
-			new = entry_table + i;
+		if(parent_dir[i].name[0] == 0x00) {
+			new = parent_dir + i;
 			break;
 		}
 	}
@@ -1016,7 +1013,9 @@ void capitalize(char *cs, int n) {
 	}
 }
 
-int parent_info(char **dir_name, struct FILEINFO *parent_dir, struct FILEINFO **entry_table) {
+int parent_info(char **dir_name, struct FILEINFO **entry_table) {
+	struct FILEINFO *parent_dir = NULL;
+	*entry_table = (struct FILEINFO *)(ADR_DISKIMG + 0x2600);
 	char *slash_pos;
 	int entry_size = 244;
 	while ((slash_pos = strchr(*dir_name, '/')) != NULL) { // '/'があれば

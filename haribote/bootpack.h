@@ -291,7 +291,7 @@ struct FILEINFO {
 	unsigned int size;
 };
 
-int parent_info(char **dir_name, struct FILEINFO *parent_dir, struct FILEINFO **entry_table);
+int parent_info(char **dir_name, struct FILEINFO **entry_table);
 void initFinfo(struct FILEINFO *finfo);
 void file_readfat(int *fat, unsigned char *img);
 void file_loadfile(int clustno, int size, char *buf, int *fat, char *img);
